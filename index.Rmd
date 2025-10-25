@@ -1,0 +1,187 @@
+---
+title: "Tablero de comando de obra"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+```
+
+Avance 1
+=====================================
+
+
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Zona del primer indicador
+
+```{r}
+plot(cars,main="Consumo de aridos", xlab="semana", ylab="m3")
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Zona de trabajo 2
+
+```{r}
+library(ggplot2)
+
+ggplot(cars, aes(x = speed, y = dist)) +
+  # 1. Añade la nube de puntos
+  geom_point() +
+  # 2. Añade la línea de tendencia lineal verde
+  geom_smooth(
+    method = "lm",      # Usa el modelo lineal (Linear Model)
+    se = FALSE,         # Opcional: Quita el sombreado del error estándar
+    color = "green",    # Define el color de la línea
+    lwd = 1.5           # Opcional: Ajusta el grosor de la línea
+  ) +
+  labs(
+    title = "Distancia de Frenado vs. Velocidad (con Tendencia Lineal)",
+    x = "Velocidad (mph)",
+    y = "Distancia de Frenado (pies)"
+  )
+```
+
+### Zona de trabajo 3
+
+Utilizaremos la técnica para importar datos del excel.
+
+
+```{r}
+library(readr)
+Prueba <- read_delim("Prueba.csv", delim = ";", 
+    escape_double = FALSE, trim_ws = TRUE)
+Prueba
+```
+
+
+
+
+
+```{r}
+# Asegúrate de tener instalada la librería plotly:
+# install.packages("plotly") 
+library(plotly)
+library(dplyr) # Útil para manipulación de datos, aunque no estrictamente necesaria aquí
+
+# 1. Preparar los datos
+costos_semanales <- data.frame(
+  Categoria = c("Materiales", "Mano de Obra", "Combustibles", "Maquinarias", "Mantenimiento"),
+  Costo = c(500, 250, 100, 300, 150)
+)
+      
+#costos_semanales = data.frame(Prueba)
+
+
+
+# 2. Crear el gráfico de pastel interactivo
+# Se usa 'plot_ly' con el tipo 'pie'
+fig <- plot_ly(costos_semanales,
+               labels = ~Categoria, # Define las etiquetas (los nombres de los costos)
+               values = ~Costo,     # Define los valores (los montos de los costos)
+               type = 'pie',
+               
+               # Opciones de visualización
+               marker = list(line = list(color = '#FFFFFF', width = 1)), # Borde blanco entre porciones
+               textinfo = 'percent+label', # Muestra el porcentaje y la etiqueta dentro de la porción
+               insidetextfont = list(color = '#000000')) %>% # Color de la fuente interna (negro)
+  
+  # Opciones de diseño general
+  layout(title = 'Distribución de Costos Semanales de la Obra',
+         showlegend = TRUE) # Muestra la leyenda
+
+# Imprimir el gráfico
+fig
+```
+
+Seguridad
+==============
+
+
+
+
+
+Column {data-width=300}
+-----------------------------------------------------------------------
+
+### Zona del cuarto indicador
+
+```{r}
+valueBox(230, caption = "días sin accidentes", icon = "fa-solid fa-person-falling-burst")
+```
+
+
+Column {data-width=700}
+-----------------------------------------------------------------------
+
+### Zona de trabajo 2
+
+Grado de avance semanal de la obra.
+
+
+```{r}
+# Definición de la variable (puedes reemplazar este valor)
+valor_actual <- 10 
+
+# 1. Definir los límites de color (colores en formato R, HEX o nombre)
+# Los límites se definen por el *inicio* de la nueva zona.
+# La estructura es: (Valor inicial, Color)
+zonas_color <- gaugeSectors(
+  success = c(80, 100),  # Verde: 75 a 100 (Success)
+  warning = c(40, 79),   # Amarillo: 50 a 75 (Warning)
+  danger = c(0, 39)     # Rojo: 0 a 50 (Danger)
+)
+
+# 2. Crear el manómetro
+gauge(
+  value = valor_actual, # El valor que se va a mostrar (ej. 65)
+  min = 0,
+  max = 100,
+  label = "Nivel Actual", # Etiqueta debajo del valor
+  sectors = zonas_color,
+  symbol = "%" # Unidad opcional
+)
+```
+
+### Zona de trabajo 3
+
+
+
+```
+
+Documentación 
+==============
+
+
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Habilitaciones municipales
+En esta sección presentamos el listado de los tramites presentados a la municipalidad que aun no estan aprobados.
+
+
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+
+### Planos proyecto ejecutivo
+
+```{r}
+
+```
+
+### Zona de trabajo 3
+
+```{r}
+
+```
+
