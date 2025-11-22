@@ -1,9 +1,13 @@
 ---
-title: "PROYECTO N°1782 - SISTEMA DE PROVISIÓN DE AGUA POTABLE LOS BARRANCOS - ETAPA II - TABLERO DE COMANDO"
+title: "PROYECTO N°1782 - SISTEMA DE PROVISIÓN DE AGUA POTABLE LOS BARRANCOS - ETAPA II"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
     vertical_layout: fill
+    logo: LOGO AM.png
+    theme: cosmo
+    css: styles.css
+runtime: shiny
 ---
 
 ```{r setup, include=FALSE}
@@ -15,95 +19,221 @@ library(shiny)
 library(ggplot2)
 library(dplyr)
 library(scales)
+library(DT)
+
+# Paleta de colores profesional
+color_primario <- "#2C3E50"
+color_secundario <- "#3498DB"
+color_exito <- "#27AE60"
+color_advertencia <- "#F39C12"
+color_peligro <- "#E74C3C"
 ```
 
 Column {data-width=200}
 -----------------------------------------------------------------------
 
-### Chart A
-```{r out.width="225px"}
-gauge(60, min = 0, max = 300, symbol = 'días',label = "Días Transcurridos", gaugeSectors(
-    danger = c(201, 300), warning = c(101, 200), success = c(0, 100)
-))
+### Días Transcurridos
+```{r}
+gauge(150, min = 0, max = 300, symbol = ' días',label = "Días Transcurridos", 
+      gaugeSectors(
+        success = c(0, 100), 
+        warning = c(101, 200), 
+        danger = c(201, 300),
+        colors = c("#27AE60", "#F39C12", "#E74C3C")
+      ))
 ```
 
-```{r out.width="225px"}
-gauge(2, min = 0, max = 100, symbol = '%', label = "% avance", gaugeSectors(
-    success = c(67, 100), warning = c(34, 66),  danger= c(0, 33)
-))
+### Porcentaje de Avance
+```{r}
+gauge(50, min = 0, max = 100, symbol = '%', label = "Avance Físico", 
+      gaugeSectors(
+        danger = c(0, 33),
+        warning = c(34, 66),
+        success = c(67, 100),
+        colors = c("#E74C3C", "#F39C12", "#27AE60")
+      ))
 ```
 
-Column {data-width=300}
------------------------------------------------------------------------
+### Certificación Acumulada
+```{r}
+gauge(50, 0, 100, symbol = "%", label = "Certificación",
+      gaugeSectors(
+        success = c(0, 50),
+        warning = c(51, 80),
+        danger = c(81, 100),
+        colors = c("#27AE60", "#F39C12", "#E74C3C")
+      ))
+```
 
-### Chart A
+### Presupuesto Total
+```{r}
+valueBox(paste0("$", format(2461823136.69, big.mark = ".", decimal.mark = ",", scientific = FALSE)),
+         icon = icon("money-bill-wave"),
+         color = "success")
+```
+
+### Presupuesto Ejecutado
+```{r}
+valueBox(paste0("$", format(1230911568.35, big.mark = ".", decimal.mark = ",", scientific = FALSE)),
+         icon = icon("money-bill-wave"),
+         color = "warning")
+```
+
 
 Column {data-width=500}
 -----------------------------------------------------------------------
 
-### Zona de obra - Traza implusión
+### Avance por Ítem de Obra
 
 ```{r}
-# CHUNK 1: Importación de datos y definición de 'datos_ruta'
+# Datos de avance por ítem
+items_obra <- data.frame(
+  item = c("1 PROVISIÓN DE MATERIALES",
+           "2 EXCAVACIÓN DE ZANJAS",
+           "3 ACARREO Y COLOCACIÓN",
+           "4 RELLENO DE ZANJA",
+           "5 ROTURA Y REPOSICIÓN DE PAVIMENTOS",
+           "6 NUDOS, EMPALMES Y CÁMARAS",
+           "7 CRUCES",
+           "8 ESTACIÓN DE BOMBEO SEGUNDO SOMBRA",
+           "9 RESERVA LOS BARRANCOS 1",
+           "10 SISTEMA DE ALIMENTACIÓN ELÉCTRICA Y CONTROL",
+           "11 OTROS GASTOS"),
+  planificado = c(4.07, 2.33, 0.80, 5.03, 4.24, 9.76, 3.38, 17.98, 24.40, 25.79, 2.23),
+  ejecutado = c(2.00, 1.15, 0.40, 2.50, 2.10, 4.85, 1.70, 9.00, 12.20, 12.90, 1.20)
+) %>%
+  mutate(
+    desvio = ejecutado - planificado,
+    item_corto = substr(item, 1, 3)
+  )
+
+# Crear gráfico de barras agrupadas
+plot_ly(items_obra) %>%
+  add_trace(
+    x = ~planificado,
+    y = ~factor(item, levels = rev(item)),
+    type = 'bar',
+    orientation = 'h',
+    name = 'Planificado',
+    marker = list(color = '#3498DB'),
+    text = ~paste0(planificado, '%'),
+    textposition = 'outside',
+    hovertemplate = paste(
+      '<b>%{y}</b><br>',
+      'Planificado: %{x:.2f}%<br>',
+      '<extra></extra>'
+    )
+  ) %>%
+  add_trace(
+    x = ~ejecutado,
+    y = ~factor(item, levels = rev(item)),
+    type = 'bar',
+    orientation = 'h',
+    name = 'Ejecutado',
+    marker = list(color = '#27AE60'),
+    text = ~paste0(ejecutado, '%'),
+    textposition = 'outside',
+    hovertemplate = paste(
+      '<b>%{y}</b><br>',
+      'Ejecutado: %{x:.2f}%<br>',
+      '<extra></extra>'
+    )
+  ) %>%
+  layout(
+    title = list(
+      text = '<b>Avance por Ítem de Obra - Planificado vs Ejecutado</b>',
+      font = list(size = 16, family = 'Arial')
+    ),
+    xaxis = list(
+      title = '<b>Porcentaje (%)</b>',
+      titlefont = list(size = 12),
+      gridcolor = '#ECF0F1',
+      showgrid = TRUE,
+      range = c(0, 30)
+    ),
+    yaxis = list(
+      title = '',
+      tickfont = list(size = 10)
+    ),
+    barmode = 'group',
+    plot_bgcolor = '#FAFAFA',
+    paper_bgcolor = 'white',
+    legend = list(
+      orientation = 'h',
+      x = 0.5,
+      xanchor = 'center',
+      y = -0.15
+    ),
+    margin = list(l = 250, r = 80, t = 60, b = 80),
+    hoverlabel = list(
+      bgcolor = 'white',
+      font = list(size = 11)
+    )
+  ) %>%
+  config(displaylogo = FALSE)
+```
+
+
+
+Column {data-width=300}
+-----------------------------------------------------------------------
+
+### Zona de Obra - Traza de Impulsión
+
+```{r}
 datos_ruta <- read_excel("datos_ruta.xlsx") 
-# 1. IDENTIFICAR LOS PUNTOS
 punto_inicio <- datos_ruta[1, ]
 punto_final <- datos_ruta[nrow(datos_ruta), ] 
 
 leaflet(data = datos_ruta) %>%
-    addProviderTiles(providers$Esri.WorldImagery) %>%
-    
-# 2. TRAZAR LA LÍNEA DE LA RUTA (usa todos los datos)
-    addPolylines(
-        lng = ~Longitud, 
-        lat = ~Latitud,
-        color = "red",      # Color más tenue para la línea
-        weight = 4,  
-        label = "Traza impulsión",
-    ) %>%
-    
-# 3. MARCADOR DE INICIO (usa solo 'punto_inicio')
-    addCircleMarkers(
-        data = punto_inicio,
-        lng = ~Longitud, 
-        lat = ~Latitud,
-        radius = 5,
-        color = "blue",        # Color del borde
-        fillColor = "blue",    # Color de relleno: VERDE (INICIO)
-        fillOpacity = 1,
-        label = "Reserva Segundo Sombra" # Mensaje al hacer clic
-    ) %>%
-    
-# 4. MARCADOR INTERMEDIO (usa todos los datos menos inicio/fin)
-    # Filtra los puntos que no son ni el primero ni el último.
-    #addCircleMarkers(
-     #   data = datos_ruta[-c(1, nrow(datos_ruta)), ],
-      #  lng = ~Longitud, 
-       # lat = ~Latitud,
-        #radius = 5,
-        #color = "black",        
-        #fillColor = "yellow",   # Color de relleno: AMARILLO (INTERMEDIO)
-        #fillOpacity = 0.8
-    ##) %>%
-    
-# 5. MARCADOR DE FINAL (usa solo 'punto_final')
-    addCircleMarkers(
-        data = punto_final,
-        lng = ~Longitud, 
-        lat = ~Latitud,
-        radius = 5,
-        color = "blue",        
-        fillColor = "blue",      # Color de relleno: ROJO (FINAL)
-        fillOpacity = 1,
-        label = "Reserva los Barrancos I"
+  addProviderTiles(providers$Esri.WorldImagery) %>%
+  addPolylines(
+    lng = ~Longitud, 
+    lat = ~Latitud,
+    color = "#E74C3C",
+    weight = 5,
+    opacity = 0.9,
+    label = "Traza de Impulsión"
+  ) %>%
+  addCircleMarkers(
+    data = punto_inicio,
+    lng = ~Longitud, 
+    lat = ~Latitud,
+    radius = 8,
+    color = "#FFFFFF",
+    fillColor = "#27AE60",
+    fillOpacity = 1,
+    weight = 3,
+    label = "Inicio: Reserva Segundo Sombra",
+    labelOptions = labelOptions(
+      style = list("font-weight" = "bold", "font-size" = "12px")
     )
-   
+  ) %>%
+  addCircleMarkers(
+    data = punto_final,
+    lng = ~Longitud, 
+    lat = ~Latitud,
+    radius = 8,
+    color = "#FFFFFF",
+    fillColor = "#3498DB",
+    fillOpacity = 1,
+    weight = 3,
+    label = "Final: Reserva Los Barrancos I",
+    labelOptions = labelOptions(
+      style = list("font-weight" = "bold", "font-size" = "12px")
+    )
+  ) %>%
+  addScaleBar(position = "bottomleft") %>%
+  addMeasure(
+    position = "topleft",
+    primaryLengthUnit = "meters",
+    primaryAreaUnit = "hectares"
+  )
 ```
 
-### Chart C
+### Curva de Inversiones
 
-```{r curva_inversiones}
-# Datos de la curva planificada
+```{r}
 datos_plan <- data.frame(
   dias = c(0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300),
   avance = c(0, 0.0020, 0.0183, 0.0834, 0.1800, 0.2902, 0.3755, 0.5479, 0.6906, 0.8709, 1.0000),
@@ -111,24 +241,22 @@ datos_plan <- data.frame(
 ) %>%
   mutate(acumulado = percent(avance, accuracy = 0.01))
 
-# Datos reales (ligeramente por debajo del plan)
 datos_real <- data.frame(
-  dias = c(0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300),
-  avance = c(0, 0.0015, 0.0150, 0.0720, 0.1650, 0.2650, 0.3400, 0.5100, 0.6400, 0.8200, 0.9500),
-  avance_mensual = c(0, 0.15, 1.35, 5.70, 9.30, 10.00, 7.50, 17.00, 13.00, 18.00, 13.00)
+  dias = c(0, 30, 60, 90, 120, 150),
+  avance = c(0, 0.0025, 0.0200, 0.0900, 0.1950, 0.5000),
+  avance_mensual = c(0, 0.25, 1.75, 7.00, 10.50, 30.50)
 ) %>%
   mutate(acumulado = percent(avance, accuracy = 0.01))
 
-# Calcular el desvío respecto al plan
 datos_comparados <- datos_real %>%
   left_join(select(datos_plan, dias, avance_plan = avance), by = "dias") %>%
   mutate(
     desvio = (avance - avance_plan) * 100,
     desvio_label = sprintf("%.2f%%", desvio),
     color = case_when(
-      desvio > 0 ~ "#2ECC71",  # verde
-      desvio < 0 ~ "#E74C3C",  # rojo
-      TRUE ~ "#377EB8"         # azul (igual)
+      desvio > 0 ~ "#27AE60",
+      desvio < 0 ~ "#E74C3C",
+      TRUE ~ "#3498DB"
     ),
     customdata = Map(c,
                      sprintf("%.2f", avance_mensual),
@@ -136,9 +264,7 @@ datos_comparados <- datos_real %>%
                      desvio_label)
   )
 
-# Crear gráfico interactivo
 plot_ly() %>%
-  # Curva planificada
   add_trace(
     data = datos_plan,
     x = ~dias,
@@ -146,8 +272,8 @@ plot_ly() %>%
     type = 'scatter',
     mode = 'lines+markers',
     name = 'Planificado',
-    line = list(color = '#E41A1C', width = 3),
-    marker = list(color = '#E41A1C', size = 8),
+    line = list(color = '#E74C3C', width = 3),
+    marker = list(color = '#E74C3C', size = 8, symbol = 'circle'),
     customdata = Map(c,
                      sprintf("%.2f", datos_plan$avance_mensual),
                      datos_plan$acumulado),
@@ -159,7 +285,6 @@ plot_ly() %>%
       "<extra></extra>"
     )
   ) %>%
-  # Curva real con color dinámico
   add_trace(
     data = datos_comparados,
     x = ~dias,
@@ -167,45 +292,61 @@ plot_ly() %>%
     type = 'scatter',
     mode = 'lines+markers',
     name = 'Real',
-    line = list(color = '#377EB8', width = 3, dash = 'dash'),
-    marker = list(size = 10, symbol = 'square', color = ~color),
+    line = list(color = '#3498DB', width = 3, dash = 'solid'),
+    marker = list(size = 10, symbol = 'diamond', color = ~color, 
+                  line = list(color = '#FFFFFF', width = 2)),
     customdata = datos_comparados$customdata,
     hovertemplate = paste(
       "<b>Real</b><br>",
       "Día: %{x}<br>",
       "Avance mensual: %{customdata[0]}%<br>",
       "Avance acumulado: %{customdata[1]}<br>",
-      "Desvío respecto al plan: %{customdata[2]}<br>",
+      "Desvío: %{customdata[2]}<br>",
       "<extra></extra>"
     )
   ) %>%
   layout(
     title = list(
-      text = "<b>CURVA DE INVERSIONES</b>",
-      font = list(size = 20, color = '#4D4D4D'),
-      x = 0.5
+      text = "<b>CURVA DE INVERSIONES - PLANIFICADO vs REAL</b>",
+      font = list(size = 18, color = '#2C3E50', family = 'Arial'),
+      x = 0.5,
+      xanchor = 'center'
     ),
     xaxis = list(
-      title = "<b>Días</b>",
+      title = "<b>Días de Proyecto</b>",
+      titlefont = list(size = 14, color = '#2C3E50'),
       dtick = 30,
       range = c(-5, 305),
-      gridcolor = '#D3D3D3',
-      showgrid = TRUE
+      gridcolor = '#ECF0F1',
+      showgrid = TRUE,
+      zeroline = FALSE
     ),
     yaxis = list(
-      title = "<b>Avance acumulado (%)</b>",
+      title = "<b>Avance Acumulado</b>",
+      titlefont = list(size = 14, color = '#2C3E50'),
       tickformat = ".0%",
       range = c(0, 1.05),
-      gridcolor = '#D3D3D3',
-      showgrid = TRUE
+      gridcolor = '#ECF0F1',
+      showgrid = TRUE,
+      zeroline = FALSE
     ),
-    plot_bgcolor = 'white',
+    plot_bgcolor = '#FAFAFA',
     paper_bgcolor = 'white',
-    hoverlabel = list(bgcolor = 'white', font = list(size = 12))
+    legend = list(
+      orientation = 'h',
+      x = 0.5,
+      xanchor = 'center',
+      y = -0.15,
+      bgcolor = 'rgba(255, 255, 255, 0.8)',
+      bordercolor = '#BDC3C7',
+      borderwidth = 1
+    ),
+    hoverlabel = list(
+      bgcolor = 'white', 
+      font = list(size = 12, family = 'Arial'),
+      bordercolor = '#BDC3C7'
+    ),
+    margin = list(t = 60, b = 80, l = 80, r = 40)
   ) %>%
-  config(displaylogo = FALSE)
+  config(displaylogo = FALSE, modeBarButtonsToRemove = c('pan2d', 'lasso2d'))
 ```
-
-
-
-
