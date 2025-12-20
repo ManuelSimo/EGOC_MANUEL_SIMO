@@ -10,3 +10,4 @@ Entrega Final 22/11/2025 17:16
   Se agregan graficos
 
 <https://github.com/ricardorpalma/Esp_Obras_2025>
+<https://manuelsimo.github.io/EGOC_MANUEL_SIMO/>
